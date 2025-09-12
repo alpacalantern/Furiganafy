@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Furiganafy v1.0</title>
+  <style>
+    :root {
+      --base-size: 16px;
+      --furigana-size: 12px;
+      --font-family: sans-serif;
+      --text-color: #000;
+      --result-bg: #fff;
+      --kanji-color: #000;
+      --kana-color: #000;
+      --furigana-color: #000;
+      --accent-color: #4a90e2;
+  --accent-hover: #357ab8;
+  button {
+  background: var(--accent-color);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  transition: background .2s ease;
+}
+.kana-colored {
+  color: var(--kana-color);
+  font-weight: bold;
+}
+button:hover,
+button:focus {
+  background: var(--accent-hover);
+}
+button:focus,
+input:focus,
+select:focus {
+  outline: 2px dashed var(--accent-color);
+  outline-offset: 2px;
+}
+
+
+    }
+     
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      line-height: 1.5;
+      background: #a4c4f2;
+
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      resize: vertical;
+      font-size: 1rem;
+    }
+    /* #controls {
+      margin: 1em 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1em;
+      align-items: center;
+    } */
+    #controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1em;
+    }
+
+    #result {
+      margin-top: 1em;
+      padding: 0.5em;
+      border: 1px solid #ccc;
+      background-color: var(--result-bg);
+      /* color: var(--text-color); */
+      color: var(--kana-color);
+      font-size: var(--base-size);
+      font-family: var(--font-family);
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      width: fit-content;
+      max-width: 100%;
+      min-width: 100px;
+      /* max-height: 100vh; */
+      overflow: auto;
+      resize: both;
+      /* background: #fff; */
+
+    }
+    #result,
+button,
+input,
+select {
+  transition: all 0.2s ease;
+}
+    ruby { ruby-position: over; }
+    rt { font-size: var(--furigana-size); }
+    ruby rt {  color: var(--furigana-color);}
+    ruby[data-type="kana"] {  color: var(--kana-color)}
+    ruby[data-type="kanji"] {  color: var(--kanji-color)}
+    
+
+    button { padding: 0.4em 0.8em; }
+    .card {
+      background: #fafafa;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 1em;
+      margin-top: 20px;
+    }
+    /* Or, if you prefer a class-based approach: */
+.small-grey {
+  font-size: 0.75em;
+  color: #383838;
+  width: 1000px;
+}
+
+  </style>
+</head>
+<body>
+  <body>
+
+    <!-- Instructions Panel -->
+    <center><h2>Furiganafy Tool v1.0</h2></center>
+    <section id="instructions" role="region" aria-labelledby="instructions-title">
+      <h5 id="instructions-title">Instructions</h5>
+      <ol class="small-grey">
+        <li>Get any text that has kanji and furigana in parentheses (ex. 私(わたし)は薬剤(やくざ)です。)</li>
+        <li>Paste it into the top-left text box. The script will pull the furigana out of the parentheses and place it over each kanji.</li>
+        <li>If there are kanji you already know, list them (comma-separated) in the right box to exclude them from furigana.
+          You can also use the bottom box to allow it to give you furigana the first time you see certain Kanji, and then never after seeing it that once.
+        </li>
+        <li>You can resize the base text, furigana, colors and sizes and save your result as an HTML file or even a .PNG</li>
+        Haven't really tested this out that much, just kinda had Copilot put a bunch of it together for me.
+        <br>Have fun with all the bugs, -V
+      </ol>
+    </section>
+
+    <div id="inputArea" style="display: flex; gap: 1em; align-items: flex-start;">
+
+      <!-- Left: source text -->
+      <textarea
+        id="inputText"
+        placeholder="Type Japanese text like 漢字(かんじ)…"
+        aria-label="Input Japanese text with parenthetical furigana"
+        style="flex: 2; height:100px;"
+      ></textarea>
+    
+      <!-- Right: stacked exclude lists -->
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5em;">
+    
+        <textarea
+          id="excludeCompleteList"
+          placeholder="Completely exclude furigana from these Kanji (comma-sep.)"
+          aria-label="Comma-separated list to fully exclude"
+          style="height: 45px; resize: vertical;"
+        ></textarea>
+    
+        <textarea
+          id="excludeOnceList"
+          placeholder="Furigana you want to see only once, then exclude (comma-sep.)"
+          aria-label="Comma-separated list to exclude after first use"
+          style="height: 45px; resize: vertical;"
+        ></textarea>
+    
+      </div>
+      
+    </div>
+
+  <div id="controls" class="card">
+    <button id="previewBtn">Furiganafy</button>
+    <button id="clearBtn">Clear</button>
+    <button id="copyBtn">📋 Copy</button>
+    <button id="exportBtn">🖼️ Export PNG</button>
+    <button id="saveHtmlBtn">Save HTML</button>
+
+    <label>
+      Base Size:
+      <input type="number" id="baseSizeInput" value="16" min="8" max="48"> px
+    </label>
+    <label>
+      Furigana Size:
+      <input type="number" id="furiganaSizeInput" value="12" min="6" max="32"> px
+    </label>
+    <label>
+      Font:
+      <select id="fontSelect">
+        <option value="sans-serif">Sans-serif</option>
+        <option value="serif">Serif</option>
+        <option value="monospace">Monospace</option>
+        <option value="Meiryo">Meiryo</option>
+        <option value="Yu Gothic">Yu Gothic</option>
+      </select>
+    </label>
+    <!-- <label>
+      Text Color:
+      <input type="color" id="textColorPicker" value="#000000">
+    </label> -->
+    <label>
+  Kanji Color:    
+  <input type="color" id="kanjiColorPicker" value="#000000">
+</label>
+<label>
+  Kana Color:
+  <input type="color" id="kanaColorPicker" value="#000000">
+</label>
+<label>
+  Furigana Color:
+  <input type="color" id="furiganaColorPicker" value="#000000">
+</label>
+    <label>
+      Background:
+      <input type="color" id="resultBgPicker" value="#ffffff">
+    </label>
+  </div>
+
+  <div id="result"
+       role="region"
+       aria-live="polite"
+       aria-label="Furigana preview"></div>
+
+  <script>
+    const inputText = document.getElementById('inputText');
+    const resultDiv = document.getElementById('result');
+    const previewBtn = document.getElementById('previewBtn');
+    const clearBtn   = document.getElementById('clearBtn');
+    const copyBtn    = document.getElementById('copyBtn');
+    const baseSizeInput = document.getElementById('baseSizeInput');
+    const furiganaSizeInput = document.getElementById('furiganaSizeInput');
+    const fontSelect = document.getElementById('fontSelect');
+    const resultBgPicker  = document.getElementById('resultBgPicker');
+
+    // Debounce helper
+    function debounce(fn, ms=300) {
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), ms);
+      };
+    }
+
+    // Single setter for CSS vars
+    function setVar(name, value) {
+      document.documentElement.style.setProperty(name, value);
+    }
+
+    // Apply all style controls
+    baseSizeInput .addEventListener('input', () => setVar('--base-size', baseSizeInput.value + 'px'));
+    furiganaSizeInput.addEventListener('input', () => setVar('--furigana-size', furiganaSizeInput.value + 'px'));
+    fontSelect   .addEventListener('input', () => setVar('--font-family', fontSelect.value));
+    resultBgPicker .addEventListener('input', () => setVar('--result-bg', resultBgPicker.value));
+    // document.getElementById('kanjiColorPicker').addEventListener('input', e => setVar('--kanji-color', e.target.value));
+    // document.getElementById('kanaColorPicker').addEventListener('input', e => setVar('--kana-color', e.target.value));
+    // document.getElementById('furiganaColorPicker').addEventListener('input', e => setVar('--furigana-color', e.target.value));
+    document.getElementById('kanjiColorPicker').addEventListener('input', e => {setVar('--kanji-color', e.target.value);console.log('New --kanji-color:', e.target.value);});
+    document.getElementById('kanaColorPicker').addEventListener('input', e => {setVar('--kana-color', e.target.value);console.log('New --kana-color:', e.target.value);});
+    document.getElementById('furiganaColorPicker').addEventListener('input', e => {setVar('--furigana-color', e.target.value);console.log('New --furigana-color:', e.target.value);});
+
+
+    
+    // Main furigana function
+    const excludeCompleteEl = document.getElementById('excludeCompleteList');
+    const excludeOnceEl     = document.getElementById('excludeOnceList');
+
+  function furiganafy() {
+
+  const raw = inputText.value;  //Raw text from Japanese text box
+
+  const escaped = raw
+  .replace(/&/g, '&amp;')  // Replaces all & with &amp;
+  .replace(/</g, '&lt;')   // Replaces all < with &lt; 
+  .replace(/>/g, '&gt;');  // Replaces all > with &gt;
+
+
+  // parse complete-exclude
+  const completeWords = excludeCompleteEl.value
+    .replace(/、/g, ',')  //Replace japanese comma with regular
+    .split(',')         //array of all words split by commas
+    .map(w => w.trim())
+    .filter(Boolean);
+
+  // parse once-only
+  const onceWords = excludeOnceEl.value
+    .replace(/、/g, ',')
+    .split(',')
+    .map(w => w.trim())
+    .filter(Boolean);
+
+  // track which onceWords we’ve already used
+  const onceUsed = new Set();
+
+const withRuby = escaped.replace(
+  /([\p{Script=Han}]+)[\s\u3000]*\([\s\u3000]*([^()]+?)[\s\u3000]*\)/gu,
+  (_, kanji, kana) => {
+    const kanaType = /^[\p{Script=Han}]+$/u.test(kanji) ? "kanji" : "kana";
+
+    if (completeWords.includes(kanji)) {
+      return `<ruby data-type="${kanaType}">${kanji}</ruby>`;
+    }
+
+    if (onceWords.includes(kanji)) {
+      if (!onceUsed.has(kanji)) {
+        onceUsed.add(kanji);
+        return `<ruby data-type="${kanaType}">${kanji}<rt>${kana}</rt></ruby>`;
+      }
+      return `<ruby data-type="${kanaType}">${kanji}</ruby>`;
+    }
+
+    return `<ruby data-type="${kanaType}">${kanji}<rt>${kana}</rt></ruby>`;
+  }
+);
+
+// console.log(withRuby);
+  resultDiv.innerHTML = withRuby;
+  console.log(resultDiv);
+}
+
+
+
+
+    // Copy result text to clipboard
+    function copyResult() {
+      navigator.clipboard.writeText(resultDiv.textContent || resultDiv.innerText);
+    }
+
+    // Bind events
+    previewBtn .addEventListener('click', furiganafy);
+    clearBtn   .addEventListener('click', () => { inputText.value = ''; resultDiv.innerHTML = ''; });
+    copyBtn    .addEventListener('click', copyResult);
+    inputText  .addEventListener('input', debounce(furiganafy, 500));
+    const exportBtn = document.getElementById('exportBtn');
+
+exportBtn.addEventListener('click', () => {
+  html2canvas(resultDiv, {
+    backgroundColor: getComputedStyle(resultDiv).backgroundColor,
+    scale: 2
+  })
+  .then(canvas => {
+    // Create a temporary link to download the image
+    const link = document.createElement('a');
+    link.download = 'furigana-output.png';
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  })
+  .catch(err => console.error('Export failed:', err));
+});
+    
+    const saveHtmlBtn = document.getElementById('saveHtmlBtn');
+
+saveHtmlBtn.addEventListener('click', () => {
+  const comp = getComputedStyle(resultDiv);
+
+  // List of CSS properties we need to preserve
+  const props = [
+    'width','min-width','min-height',
+    'padding','border',
+    'background-color','color',
+    'font-family','font-size','line-height',
+    'white-space','overflow-wrap'
+  ];
+
+  // Build an inline style string
+  const inlineStyle = props
+    .map(p => `${p}:${comp.getPropertyValue(p)}`)
+    .join(';');
+
+  // Get the furigana font-size (computed CSS variable)
+  const furiganaSize = comp.getPropertyValue('--furigana-size');
+
+  // Minimal stylesheet for ruby tags
+  const rubyCss = `
+    <style>
+      ruby { ruby-position: over; }
+      rt   { font-size: ${furiganaSize}; }
+    </style>`.trim();
+
+  // Construct a complete HTML document
+  const html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Furigana Output</title>
+  ${rubyCss}
+</head>
+<body>
+  <div style="${inlineStyle}">
+    ${resultDiv.innerHTML}
+  </div>
+</body>
+</html>`;
+
+  // Trigger download
+  const blob = new Blob([html], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'furigana-output.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+});
+    
+  </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</body>
+</html>
