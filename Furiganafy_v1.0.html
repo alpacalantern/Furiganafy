@@ -297,7 +297,7 @@ select {
     document.getElementById('furiganaColorPicker').addEventListener('input', e => {setVar('--furigana-color', e.target.value);console.log('New --furigana-color:', e.target.value);});
     document.getElementById('allTextColorPicker').addEventListener('input', e => {setVar('--furigana-color', e.target.value);setVar('--kana-color', e.target.value);setVar('--kanji-color', e.target.value);});
   // const root = document.documentElement;
-
+    //
   // Store original value
   const rootStyles = getComputedStyle(document.documentElement);
   const originalValue = rootStyles.getPropertyValue('--result-bg').trim();
