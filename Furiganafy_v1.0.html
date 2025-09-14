@@ -75,7 +75,8 @@ select:focus {
       font-family: var(--font-family);
       white-space: pre-wrap;
       overflow-wrap: break-word;
-      width: fit-content;
+      /* width: fit-content; */
+      height: auto !important;
       max-width: 100%;
       min-width: 100px;
       /* max-height: 100vh; */
@@ -182,11 +183,11 @@ select {
 
     <label>
       Base Size:
-      <input type="number" id="baseSizeInput" value="30" min="8" max="48"> px
+      <input type="number" id="baseSizeInput" value="30" min="8"> px
     </label>
     <label>
       Furigana Size:
-      <input type="number" id="furiganaSizeInput" value="16" min="6" max="32"> px
+      <input type="number" id="furiganaSizeInput" value="18" min="6"> px
     </label>
     <div>
     <label>
@@ -231,6 +232,11 @@ select {
       Transparent
       <input type="checkbox" id="transparentToggle">
     </label>
+    <div><label>
+      Width:
+      <input type="number" id="resultWidthInput" value="400" min="100" max="2000"> px
+    </label>
+  </div>
     </div>
   </div>
 
@@ -252,6 +258,9 @@ select {
     const resultBgPicker  = document.getElementById('resultBgPicker');
     const transparentToggle = document.getElementById('transparentToggle');
     const allTextColorPicker = document.getElementById('allTextColorPicker');
+    const resultWidthInput = document.getElementById('resultWidthInput');
+
+
     // Debounce helper
     function debounce(fn, ms=300) {
       let timer;
@@ -260,6 +269,14 @@ select {
         timer = setTimeout(() => fn.apply(this, args), ms);
       };
     }
+    // Update width input when resultDiv is resized
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const width = Math.round(entry.contentRect.width);
+        resultWidthInput.value = width;
+      }
+    });
+    ro.observe(resultDiv);
 
     // Single setter for CSS vars
     function setVar(name, value) {
@@ -271,6 +288,7 @@ select {
     furiganaSizeInput.addEventListener('input', () => setVar('--furigana-size', furiganaSizeInput.value + 'px'));
     fontSelect   .addEventListener('input', () => setVar('--font-family', fontSelect.value));
     resultBgPicker .addEventListener('input', () => setVar('--result-bg', resultBgPicker.value));
+    resultWidthInput.addEventListener('input', () => resultDiv.style.width = resultWidthInput.value + 'px');
     // document.getElementById('kanjiColorPicker').addEventListener('input', e => setVar('--kanji-color', e.target.value));
     // document.getElementById('kanaColorPicker').addEventListener('input', e => setVar('--kana-color', e.target.value));
     // document.getElementById('furiganaColorPicker').addEventListener('input', e => setVar('--furigana-color', e.target.value));
@@ -283,20 +301,18 @@ select {
   // Store original value
   const rootStyles = getComputedStyle(document.documentElement);
   const originalValue = rootStyles.getPropertyValue('--result-bg').trim();
-  // const origBorder = rootStyles.getPropertyValue('--resultborder');
-  // let originalValue = getPropertyValue('--result-bg').trim();
+  const origBorder = resultDiv.style.border
     
-  transparentToggle.addEventListener('change', () => {
-    console.log(originalValue);
+    transparentToggle.addEventListener('change', () => {
     resultBgPicker.classList.toggle('greyed-out', transparentToggle.checked);
     if (transparentToggle.checked) {
     // Append " transparent" or override with transparency
     setVar('--result-bg', `${originalValue}00`);
-    // setVar('--resultborder', none);
+    resultDiv.style.border = 'none'; // <-- Remove border
   } else {
     // Restore original value
     setVar('--result-bg', `${originalValue}FF`);
-    // setVar('--resultborder',`${origBorder}`);
+    resultDiv.style.border = origBorder; // <-- Remove border
   }
 });
 
